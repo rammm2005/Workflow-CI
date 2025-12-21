@@ -33,15 +33,26 @@ Xte = hstack([Xte_tfidf, Xte_num])
 
 model = LogisticRegression(max_iter=1000)
 
-with mlflow.start_run():
-    model.fit(Xtr, ytr)
-    preds = model.predict(Xte)
+# with mlflow.start_run():
+#     model.fit(Xtr, ytr)
+#     preds = model.predict(Xte)
 
-    acc = accuracy_score(yte, preds)
-    f1 = f1_score(yte, preds, average="weighted")
+#     acc = accuracy_score(yte, preds)
+#     f1 = f1_score(yte, preds, average="weighted")
 
-    mlflow.log_metric("accuracy", acc)
-    mlflow.log_metric("f1_score", f1)
-    mlflow.sklearn.log_model(model, "model")
+#     mlflow.log_metric("accuracy", acc)
+#     mlflow.log_metric("f1_score", f1)
+#     mlflow.sklearn.log_model(model, "model")
+
+model.fit(Xtr, ytr)
+preds = model.predict(Xte)
+
+acc = accuracy_score(yte, preds)
+f1 = f1_score(yte, preds, average="weighted")
+
+mlflow.log_metric("accuracy", acc)
+mlflow.log_metric("f1_score", f1)
+mlflow.sklearn.log_model(model, "model")
+
 
 print("CI training selesai")
