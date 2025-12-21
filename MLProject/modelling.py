@@ -4,11 +4,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, f1_score
 from scipy.sparse import hstack
-
-experiment_name = "CI-BBC-News"
-mlflow.set_experiment(experiment_name)
 
 df = pd.read_csv("bbc_news_preprocessing.csv")
 
@@ -28,22 +26,16 @@ tfidf = TfidfVectorizer(max_features=3000)
 Xtr_tfidf = tfidf.fit_transform(Xtr_txt)
 Xte_tfidf = tfidf.transform(Xte_txt)
 
-Xtr = hstack([Xtr_tfidf, Xtr_num])
-Xte = hstack([Xte_tfidf, Xte_num])
+scaler = StandardScaler()
+Xtr_num_scaled = scaler.fit_transform(Xtr_num)
+Xte_num_scaled = scaler.transform(Xte_num)
 
-model = LogisticRegression(max_iter=1000)
+Xtr = hstack([Xtr_tfidf, Xtr_num_scaled])
+Xte = hstack([Xte_tfidf, Xte_num_scaled])
 
-# with mlflow.start_run():
-#     model.fit(Xtr, ytr)
-#     preds = model.predict(Xte)
+model = LogisticRegression(max_iter=5000)
 
-#     acc = accuracy_score(yte, preds)
-#     f1 = f1_score(yte, preds, average="weighted")
-
-#     mlflow.log_metric("accuracy", acc)
-#     mlflow.log_metric("f1_score", f1)
-#     mlflow.sklearn.log_model(model, "model")
-
+# Langsung fit & predict, tanpa start_run() karena dijalankan via mlflow run
 model.fit(Xtr, ytr)
 preds = model.predict(Xte)
 
@@ -53,6 +45,5 @@ f1 = f1_score(yte, preds, average="weighted")
 mlflow.log_metric("accuracy", acc)
 mlflow.log_metric("f1_score", f1)
 mlflow.sklearn.log_model(model, "model")
-
 
 print("CI training selesai")
