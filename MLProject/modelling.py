@@ -7,7 +7,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 from scipy.sparse import hstack
 
-mlflow.set_experiment("CI-BBC-News")
+if not mlflow.active_run():
+    mlflow.set_experiment("CI-BBC-News")
 
 df = pd.read_csv("bbc_news_preprocessing.csv")
 
@@ -32,7 +33,7 @@ Xte = hstack([Xte_tfidf, Xte_num])
 
 model = LogisticRegression(max_iter=1000)
 
-with mlflow.start_run():
+with mlflow.start_run(nested=True if mlflow.active_run() else False):
     model.fit(Xtr, ytr)
     preds = model.predict(Xte)
 
