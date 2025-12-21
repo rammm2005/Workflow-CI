@@ -31,9 +31,8 @@ jobs:
       - name: Run MLflow Project
         shell: bash -l {0}
         run: |
-          conda activate test
           cd MLProject
-          python modelling.py
+          mlflow run . --env-manager=conda
 
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
