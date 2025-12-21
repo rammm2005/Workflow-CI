@@ -13,16 +13,23 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup Miniconda
+        uses: goanpeca/setup-miniconda@v3
         with:
-          python-version: "3.10"
+          python-version: 3.10
+          auto-update-conda: true
+          activate-environment: mlflow
+          environment-file: MLProject/environment.yml
+          use-mamba: true
 
       - name: Install MLflow
-        run: pip install mlflow
+        run: |
+          conda activate mlflow
+          pip install mlflow
 
       - name: Run MLflow Project
         run: |
+          conda activate mlflow
           cd MLProject
           mlflow run . --env-manager=conda
 
