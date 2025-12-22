@@ -22,49 +22,54 @@ TARGET_COL = "label_encoded"
 
 
 def main():
-    df = pd.read_csv(DATA_PATH)
 
-    X = df[[TEXT_COL] + NUM_COLS]
-    y = df[TARGET_COL]
+    with mlflow.start_run() as run:
+        print(f"MLFLOW_RUN_ID={run.info.run_id}")
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42,
-        stratify=y,
-    )
+        df = pd.read_csv(DATA_PATH)
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("text", TfidfVectorizer(max_features=5000), TEXT_COL),
-            ("num", "passthrough", NUM_COLS),
-        ]
-    )
+        X = df[[TEXT_COL] + NUM_COLS]
+        y = df[TARGET_COL]
 
-    model = Pipeline(
-        steps=[
-            ("preprocessing", preprocessor),
-            ("classifier", LogisticRegression(max_iter=1000)),
-        ]
-    )
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+            stratify=y,
+        )
 
-    model.fit(X_train, y_train)
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("text", TfidfVectorizer(max_features=5000), TEXT_COL),
+                ("num", "passthrough", NUM_COLS),
+            ]
+        )
 
-    preds = model.predict(X_test)
+        # Model
+        model = Pipeline(
+            steps=[
+                ("preprocessing", preprocessor),
+                ("classifier", LogisticRegression(max_iter=1000)),
+            ]
+        )
 
-    acc = accuracy_score(y_test, preds)
-    f1 = f1_score(y_test, preds, average="weighted")
+        model.fit(X_train, y_train)
 
-    mlflow.log_metric("accuracy", acc)
-    mlflow.log_metric("f1_score", f1)
+        preds = model.predict(X_test)
 
-    mlflow.sklearn.log_model(
-        model,
-        artifact_path="model"
-    )
+        acc = accuracy_score(y_test, preds)
+        f1 = f1_score(y_test, preds, average="weighted")
 
-    print(f"Training selesai | ACC={acc:.4f} | F1={f1:.4f}")
+        mlflow.log_metric("accuracy", acc)
+        mlflow.log_metric("f1_score", f1)
+
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path="model"
+        )
+
+        print(f"Training selesai | ACC={acc:.4f} | F1={f1:.4f}")
 
 
 if __name__ == "__main__":

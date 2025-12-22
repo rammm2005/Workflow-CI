@@ -26,7 +26,13 @@ jobs:
         run: |
           cd MLProject
           export MLFLOW_TRACKING_URI=file:${GITHUB_WORKSPACE}/MLProject/mlruns
-          mlflow run . --env-manager=local
+          mlflow run . --env-manager=local | tee output.log
+
+          RUN_ID=$(grep "MLFLOW_RUN_ID=" output.log | tail -1 | cut -d= -f2)
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+
+          echo "Detected RUN_ID=$RUN_ID"
+
 
       - name: Get Latest MLflow Run ID
         shell: bash -l {0}
