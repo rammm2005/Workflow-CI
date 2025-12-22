@@ -1,128 +1,80 @@
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-import matplotlib.pyplot as plt
-
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    ConfusionMatrixDisplay,
-)
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score
+import os
+
+DATA_PATH = "bbc_news_preprocessing.csv"   
+TARGET_COL = "label"
+TEXT_COL = "text"
 
 
-df = pd.read_csv("bbc_news_preprocessing.csv")
+def main():
+    mlflow.sklearn.autolog(
+        log_models=True,
+        log_input_examples=True,
+        log_model_signatures=True
+    )
 
-X = df[
-    [
-        "clean_text",
-        "no_sentences",
-        "flesch_reading_ease_score",
-        "dale_chall_readability_score",
-    ]
-]
-y = df["label_encoded"]
+    with mlflow.start_run() as run:
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y,
-)
+        df = pd.read_csv(DATA_PATH)
 
-# =====================
-# Pipeline
-# =====================
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("text", TfidfVectorizer(max_features=5000), "clean_text"),
-        (
-            "num",
-            "passthrough",
-            [
-                "no_sentences",
-                "flesch_reading_ease_score",
-                "dale_chall_readability_score",
-            ],
-        ),
-    ]
-)
+        X = df[TEXT_COL]
+        y = df[TARGET_COL]
 
-pipeline = Pipeline(
-    steps=[
-        ("preprocessing", preprocessor),
-        ("classifier", LogisticRegression(max_iter=1000)),
-    ]
-)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+            stratify=y
+        )
 
-# =====================
-# Hyperparameter Tuning
-# =====================
-param_grid = {
-    "classifier__C": [0.1, 1, 10],
-    "classifier__solver": ["liblinear", "lbfgs"],
-}
-
-grid = GridSearchCV(
-    pipeline,
-    param_grid=param_grid,
-    cv=3,
-    scoring="f1_weighted",
-    n_jobs=-1,
-)
+        pipeline = Pipeline([
+            ("tfidf", TfidfVectorizer(
+                max_features=5000,
+                ngram_range=(1, 2),
+                stop_words="english"
+            )),
+            ("clf", LogisticRegression(
+                max_iter=300,
+                n_jobs=-1
+            ))
+        ])
 
 
-grid.fit(X_train, y_train)
+        pipeline.fit(X_train, y_train)
 
-best_model = grid.best_estimator_
-y_pred = best_model.predict(X_test)
+   
+        y_pred = pipeline.predict(X_test)
 
-# =====================
-# Metrics
-# =====================
-mlflow.log_params(grid.best_params_)
-mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
-mlflow.log_metric(
-    "precision", precision_score(y_test, y_pred, average="weighted")
-)
-mlflow.log_metric(
-    "recall", recall_score(y_test, y_pred, average="weighted")
-)
-mlflow.log_metric(
-    "f1_score", f1_score(y_test, y_pred, average="weighted")
-)
+        acc = accuracy_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred, average="weighted")
 
-# =====================
-# Model
-# =====================
-mlflow.sklearn.log_model(best_model, "model")
+        mlflow.log_metric("accuracy", acc)
+        mlflow.log_metric("f1_score", f1)
+
+        mlflow.sklearn.log_model(
+            sk_model=pipeline,
+            artifact_path="model",
+            input_example=X_test.iloc[:5],
+            registered_model_name=None
+        )
 
 
-disp = ConfusionMatrixDisplay.from_estimator(
-    best_model, X_test, y_test
-)
-plt.savefig("confusion_matrix.png")
-mlflow.log_artifact("confusion_matrix.png")
-plt.close()
+        with open("run_id.txt", "w") as f:
+            f.write(run.info.run_id)
 
-# =====================
-# Artifact 2: TF-IDF Features
-# =====================
-tfidf = best_model.named_steps[
-    "preprocessing"
-].named_transformers_["text"]
+        print("Training selesai")
+        print(f"Run ID: {run.info.run_id}")
+        print(f"Accuracy: {acc:.4f}")
+        print(f"F1 Score: {f1:.4f}")
 
-with open("tfidf_features.txt", "w") as f:
-    for feat in tfidf.get_feature_names_out():
-        f.write(feat + "\n")
 
-mlflow.log_artifact("tfidf_features.txt")
-
-print("✅ CI Training via MLflow Project selesai")
+if __name__ == "__main__":
+    main()
