@@ -30,13 +30,13 @@ jobs:
         run: |
           pip install mlflow pandas scikit-learn joblib matplotlib seaborn
 
-      - name: Run MLflow Project
-        shell: bash -l {0}
-        run: |
+      -  name: Run MLflow Project
+         shell: bash -l {0}
+         run: |
           cd MLProject
-          # langsung jalankan script, jangan mlflow run
+          source /usr/share/miniconda/etc/profile.d/conda.sh
+          conda activate mlflow_env
           python modelling.py
-          # run_id sudah tersimpan di run_id.txt
 
       - name: Get latest MLflow run_id
         run: |
