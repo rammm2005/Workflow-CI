@@ -52,7 +52,9 @@ jobs:
           path: MLProject/mlruns
 
       - name: Build Docker Image
+        shell: bash -l {0}
         run: |
+          conda activate mlflow_env
           cd MLProject
           RUN_ID=$(cat run_id.txt)
           mlflow models build-docker \
