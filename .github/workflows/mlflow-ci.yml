@@ -10,10 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repo
         uses: actions/checkout@v4
-
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
@@ -23,22 +21,19 @@ jobs:
           environment-file: MLProject/conda.yaml
           auto-activate-base: false
 
-
       - name: Run MLflow Project (Training)
         shell: bash -l {0}
         run: |
           cd MLProject
+          export MLFLOW_TRACKING_URI=file:./mlruns
           mlflow run .
 
- 
       - name: Get Latest MLflow Run ID
         shell: bash -l {0}
         run: |
           cd MLProject
           RUN_ID=$(ls mlruns/*/*/artifacts/model -d | tail -n 1 | awk -F'/' '{print $(NF-2)}')
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
-          echo "Latest RUN_ID: $RUN_ID"
-
 
       - name: Build Docker Image
         shell: bash -l {0}
@@ -53,7 +48,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
 
       - name: Push Docker Image
         run: |
