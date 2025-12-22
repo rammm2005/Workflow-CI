@@ -11,11 +11,7 @@ from scipy.sparse import hstack
 df = pd.read_csv("bbc_news_preprocessing.csv")
 
 X_text = df["clean_text"]
-X_num = df[[
-    "no_sentences",
-    "flesch_reading_ease_score",
-    "dale_chall_readability_score"
-]]
+X_num = df[["no_sentences", "flesch_reading_ease_score", "dale_chall_readability_score"]]
 y = df["label_encoded"]
 
 Xtr_txt, Xte_txt, Xtr_num, Xte_num, ytr, yte = train_test_split(
@@ -35,15 +31,19 @@ Xte = hstack([Xte_tfidf, Xte_num_scaled])
 
 model = LogisticRegression(max_iter=5000)
 
-# Langsung fit & predict, tanpa start_run() karena dijalankan via mlflow run
-model.fit(Xtr, ytr)
-preds = model.predict(Xte)
+with mlflow.start_run() as run:
+    model.fit(Xtr, ytr)
+    preds = model.predict(Xte)
 
-acc = accuracy_score(yte, preds)
-f1 = f1_score(yte, preds, average="weighted")
+    acc = accuracy_score(yte, preds)
+    f1 = f1_score(yte, preds, average="weighted")
 
-mlflow.log_metric("accuracy", acc)
-mlflow.log_metric("f1_score", f1)
-mlflow.sklearn.log_model(model, "model")
+    mlflow.log_metric("accuracy", acc)
+    mlflow.log_metric("f1_score", f1)
+    mlflow.sklearn.log_model(model, "model")
 
-print("CI training selesai")
+    run_id = run.info.run_id
+    with open("run_id.txt", "w") as f:
+        f.write(run_id)
+
+print("CI training selesai. run_id:", run_id)
