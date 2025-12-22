@@ -34,9 +34,9 @@ jobs:
         shell: bash -l {0}
         run: |
           cd MLProject
-          mlflow run . --env-manager=conda
-          # Simpan run_id terakhir
-          echo "$(mlflow runs list --max-results 1 --filter-tag mlflow.runName=MLProject | awk 'NR==2{print $1}')" > run_id.txt
+          # langsung jalankan script, jangan mlflow run
+          python modelling.py
+          # run_id sudah tersimpan di run_id.txt
 
       - name: Get latest MLflow run_id
         run: |
