@@ -22,20 +22,21 @@ jobs:
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@v3
         with:
-          auto-update-conda: true
-          python-version: "3.12"
           activate-environment: mlflow_env
+          environment-file: environment.yml
+          auto-activate-base: false
 
-      - name: Install Python dependencies
+      - name: Install Dependencies inside Conda
+        shell: bash -l {0}
         run: |
-          pip install mlflow pandas scikit-learn joblib matplotlib seaborn
-
-      -  name: Run MLflow Project
-         shell: bash -l {0}
-         run: |
-          cd MLProject
-          source /usr/share/miniconda/etc/profile.d/conda.sh
           conda activate mlflow_env
+          pip install mlflow pandas scikit-learn joblib matplotlib seaborn scipy
+
+      - name: Run MLflow Project
+        shell: bash -l {0}
+        run: |
+          conda activate mlflow_env
+          cd MLProject
           python modelling.py
 
       - name: Get latest MLflow run_id
