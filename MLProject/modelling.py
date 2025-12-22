@@ -10,9 +10,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 
 
-# =====================
-# CONFIG
-# =====================
 DATA_PATH = "bbc_news_preprocessing.csv"
 
 TEXT_COL = "clean_text"
@@ -52,25 +49,22 @@ def main():
         ]
     )
 
-    mlflow.set_experiment("BBC News CI Training")
+    model.fit(X_train, y_train)
 
-    with mlflow.start_run():
-        model.fit(X_train, y_train)
+    preds = model.predict(X_test)
 
-        preds = model.predict(X_test)
+    acc = accuracy_score(y_test, preds)
+    f1 = f1_score(y_test, preds, average="weighted")
 
-        acc = accuracy_score(y_test, preds)
-        f1 = f1_score(y_test, preds, average="weighted")
+    mlflow.log_metric("accuracy", acc)
+    mlflow.log_metric("f1_score", f1)
 
-        mlflow.log_metric("accuracy", acc)
-        mlflow.log_metric("f1_score", f1)
+    mlflow.sklearn.log_model(
+        model,
+        artifact_path="model"
+    )
 
-        mlflow.sklearn.log_model(
-            model,
-            artifact_path="model"
-        )
-
-        print(f"Training selesai | ACC={acc:.4f} | F1={f1:.4f}")
+    print(f"Training selesai | ACC={acc:.4f} | F1={f1:.4f}")
 
 
 if __name__ == "__main__":
