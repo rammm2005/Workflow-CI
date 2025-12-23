@@ -1,5 +1,4 @@
 import mlflow
-import mlflow.sklearn
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
@@ -9,7 +8,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 
-
+# =====================
+# CONFIG
+# =====================
 DATA_PATH = "bbc_news_preprocessing.csv"
 
 TEXT_COL = "clean_text"
@@ -22,10 +23,9 @@ TARGET_COL = "label_encoded"
 
 
 def main():
+    mlflow.autolog()
 
-    with mlflow.start_run() as run:
-        print(f"MLFLOW_RUN_ID={run.info.run_id}")
-
+    with mlflow.start_run():
         df = pd.read_csv(DATA_PATH)
 
         X = df[[TEXT_COL] + NUM_COLS]
@@ -46,7 +46,6 @@ def main():
             ]
         )
 
-        # Model
         model = Pipeline(
             steps=[
                 ("preprocessing", preprocessor),
@@ -61,13 +60,8 @@ def main():
         acc = accuracy_score(y_test, preds)
         f1 = f1_score(y_test, preds, average="weighted")
 
-        mlflow.log_metric("accuracy", acc)
-        mlflow.log_metric("f1_score", f1)
-
-        mlflow.sklearn.log_model(
-            sk_model=model,
-            artifact_path="model"
-        )
+        mlflow.log_metric("accuracy_manual", acc)
+        mlflow.log_metric("f1_score_manual", f1)
 
         print(f"Training selesai | ACC={acc:.4f} | F1={f1:.4f}")
 
