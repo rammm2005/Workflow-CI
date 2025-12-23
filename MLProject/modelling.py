@@ -8,9 +8,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 
-# =====================
-# CONFIG
-# =====================
 DATA_PATH = "bbc_news_preprocessing.csv"
 
 TEXT_COL = "clean_text"
@@ -25,7 +22,9 @@ TARGET_COL = "label_encoded"
 def main():
     mlflow.autolog()
 
-    with mlflow.start_run():
+    with mlflow.start_run() as run:
+        print(f"MLFLOW_RUN_ID={run.info.run_id}")
+
         df = pd.read_csv(DATA_PATH)
 
         X = df[[TEXT_COL] + NUM_COLS]
