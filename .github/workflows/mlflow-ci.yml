@@ -28,9 +28,15 @@ jobs:
           export MLFLOW_TRACKING_URI=file:${GITHUB_WORKSPACE}/MLProject/mlruns
           mlflow run . --env-manager=local | tee output.log
 
+      - name: Get latest run_id & model path
+        shell: bash -l {0}
+        run: |
+          cd MLProject
           RUN_ID=$(grep "MLFLOW_RUN_ID=" output.log | tail -1 | cut -d= -f2)
+          MODEL_PATH="runs:/$RUN_ID/model"
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
-          echo "Detected RUN_ID=$RUN_ID"
+          echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
+          echo "Detected RUN_ID=$RUN_ID and MODEL_PATH=$MODEL_PATH"
 
       - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
@@ -38,12 +44,12 @@ jobs:
           name: mlflow-artifacts
           path: MLProject/mlruns
 
-      - name: Build Docker Image
+      - name: Build Docker Image from Latest MLflow Model
         shell: bash -l {0}
         run: |
           cd MLProject
           mlflow models build-docker \
-            -m "runs:/$RUN_ID/model" \
+            -m "$MODEL_PATH" \
             -n bbc-news-mlflow
 
       - name: Login to Docker Hub
